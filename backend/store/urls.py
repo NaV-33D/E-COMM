@@ -14,6 +14,8 @@ urlpatterns = [
     path('products/<int:pk>/update/', views.update_product, name='update_product'),
     path('products/<int:pk>/delete/', views.delete_product, name='delete_product'),
     
+    
+
     # Category APIs
     path('categories/', views.get_categories, name='get_categories'),
     path('categories/create/', views.create_category, name='create_category'),
@@ -36,4 +38,8 @@ urlpatterns = [
     path('orders/', views.get_orders, name='get_orders'),
     path('me/', views.current_user, name='current_user'),
     path('dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
+
+    path("wishlist/", views.get_wishlist),
+    path("wishlist/add/", views.add_to_wishlist),
+    path("wishlist/remove/", views.remove_from_wishlist),
 ]

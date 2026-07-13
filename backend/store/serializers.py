@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Category, Cart, CartItem
+from .models import Product, Category, Cart, CartItem, Wishlist, WishlistItem
 from django.contrib.auth.models import User
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -8,7 +8,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ProductSerializer(serializers.ModelSerializer):
-    # category = CategorySerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
 
     class Meta:
         model = Product
@@ -60,3 +60,29 @@ class RegisterSerializer(serializers.ModelSerializer):
             password = validated_data['password']
             user = User.objects.create_user(username=username, email=email, password=password)
             return user
+    
+class WishlistItemSerializer(serializers.ModelSerializer):
+    product = serializers.IntegerField(source="product.id", read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_price = serializers.DecimalField(
+        source="product.price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+    product_image = serializers.ImageField(
+        source="product.image",
+        read_only=True,
+    )
+
+    class Meta:
+        model = WishlistItem
+        fields = "__all__"
+
+
+class WishlistSerializer(serializers.ModelSerializer):
+    items = WishlistItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Wishlist
+        fields = "__all__"

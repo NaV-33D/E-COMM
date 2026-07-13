@@ -1,52 +1,106 @@
 import React, { useEffect, useState } from 'react'
+import CategoryModal from '../../components/CategoryModal'
+import DeleteModal from '../../components/DeleteModal'
 
 const Categories = () => {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [categoryToDelete, setCategoryToDelete] = useState(null)
+
+  const BASEURL = import.meta.env.VITE_BASE_URL || 'http://127.0.0.1:8000/'
+  const token = localStorage.getItem('access_token')
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const token = localStorage.getItem('access_token')
-        const response = await fetch('http://127.0.0.1:8000/api/categories/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setCategories(data)
-        } else {
-          setError('Failed to fetch categories')
-        }
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchCategories()
   }, [])
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this category?')) return
-
+  const fetchCategories = async () => {
+    setLoading(true)
     try {
-      const token = localStorage.getItem('access_token')
-      const response = await fetch(`http://127.0.0.1:8000/api/categories/${id}/delete/`, {
+      const response = await fetch(`${BASEURL}api/categories/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      } else {
+        setError('Failed to fetch categories')
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddCategoryClick = () => {
+    setSelectedCategory(null)
+    setIsCategoryModalOpen(true)
+  }
+
+  const handleEditClick = (category) => {
+    setSelectedCategory(category)
+    setIsCategoryModalOpen(true)
+  }
+
+  const handleCategorySubmit = async (form) => {
+    try {
+      const url = selectedCategory
+        ? `${BASEURL}api/categories/${selectedCategory.id}/update/`
+        : `${BASEURL}api/categories/create/`
+
+      const method = selectedCategory ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
+      })
+
+      if (response.ok) {
+        alert(selectedCategory ? 'Category updated successfully!' : 'Category created successfully!')
+        setIsCategoryModalOpen(false)
+        fetchCategories()
+      } else {
+        const errText = await response.text()
+        alert('Failed to save category: ' + errText)
+      }
+    } catch (err) {
+      alert(`Error: ${err.message}`)
+    }
+  }
+
+  const handleDeleteClick = (category) => {
+    setCategoryToDelete(category)
+    setIsDeleteModalOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    try {
+      const response = await fetch(`${BASEURL}api/categories/${categoryToDelete.id}/delete/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       })
       if (response.ok) {
-        setCategories(categories.filter((c) => c.id !== id))
+        alert('Category deleted successfully!')
+        setCategories(categories.filter((c) => c.id !== categoryToDelete.id))
+        setIsDeleteModalOpen(false)
       } else {
         alert('Failed to delete category')
       }
     } catch (err) {
-      alert(err.message)
+      alert(`Error: ${err.message}`)
     }
   }
 
@@ -57,7 +111,10 @@ const Categories = () => {
           <h1 className="text-3xl font-semibold text-slate-900">Categories</h1>
           <p className="mt-2 text-sm text-slate-500">Create and manage categories here.</p>
         </div>
-        <button className="inline-flex items-center rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
+        <button
+          onClick={handleAddCategoryClick}
+          className="inline-flex items-center rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+        >
           Add Category
         </button>
       </div>
@@ -84,13 +141,16 @@ const Categories = () => {
                     <td className="px-6 py-4 text-sm text-slate-900">{category.id}</td>
                     <td className="px-6 py-4 text-sm text-slate-900">{category.name}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">{category.slug}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <button className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50">
+                    <td className="px-6 py-4 text-sm space-x-2">
+                      <button
+                        onClick={() => handleEditClick(category)}
+                        className="rounded px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                      >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(category.id)}
-                        className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                        onClick={() => handleDeleteClick(category)}
+                        className="rounded px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                       >
                         Delete
                       </button>
@@ -108,6 +168,23 @@ const Categories = () => {
           </table>
         </div>
       )}
+      {/* Category Modal */}
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSubmit={handleCategorySubmit}
+        category={selectedCategory}
+      />
+
+      {/* Delete Modal */}
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Category"
+        message={`Are you sure you want to delete "${categoryToDelete?.name}"? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
+
     </div>
   )
 }

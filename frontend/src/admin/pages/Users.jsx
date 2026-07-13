@@ -55,11 +55,11 @@ const Users = () => {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">Users</h1>
-          <p className="mt-2 text-sm text-slate-500">Add or manage users in the system.</p>
+          {/* <p className="mt-2 text-sm text-slate-500">Add or manage users in the system.</p> */}
         </div>
-        <button className="inline-flex items-center rounded-2xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">
+        {/* <button className="inline-flex items-center rounded-2xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">
           Add User
-        </button>
+        </button> */}
       </div>
 
       {loading ? (
@@ -85,9 +85,9 @@ const Users = () => {
                     <td className="px-6 py-4 text-sm text-slate-900">{user.username}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">{user.email}</td>
                     <td className="px-6 py-4 text-sm">
-                      <button className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50">
+                      {/* <button className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50">
                         Edit
-                      </button>
+                      </button> */}
                       <button
                         onClick={() => handleDelete(user.id)}
                         className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"

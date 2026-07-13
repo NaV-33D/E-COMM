@@ -4,12 +4,22 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from django.contrib.auth.models import User
 from .serializers import RegisterSerializer, UserSerializer
 from rest_framework import status
-from .models import Product, Category, Cart, CartItem, Order, OrderItem
-from .serializers import ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer
+from .models import Product, Category, Cart, CartItem, Order, OrderItem, WishlistItem, Wishlist
+from .serializers import ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer, WishlistItemSerializer, WishlistSerializer
 
 @api_view(['GET'])
 def get_products(request):
     products = Product.objects.all()
+
+    search = request.GET.get("search")
+    category = request.GET.get("category")
+
+    if search:
+        products = products.filter(name__icontains=search)
+
+    if category:
+        products = products.filter(category_id=category)
+
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
 
@@ -17,10 +27,10 @@ def get_products(request):
 def get_product(request, pk):
     try:
         product = Product.objects.get(id=pk)
-        serializer = ProductSerializer(product, context = {'request': request})
+        serializer = ProductSerializer(product)
         return Response(serializer.data)
     except Product.DoesNotExist:
-        return Response({'error': 'Product not found'}, status=404)
+        return Response({"error": "Product not found"}, status=404)
 
 @api_view(['GET'])
 def get_categories(request):
@@ -299,3 +309,42 @@ def dashboard_stats(request):
         'total_users': total_users,
         'total_orders': total_orders,
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_wishlist(request):
+    wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+    serializer = WishlistSerializer(wishlist)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_to_wishlist(request):
+    product_id = request.data.get("product_id")
+
+    product = Product.objects.get(id=product_id)
+
+    wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+
+    WishlistItem.objects.get_or_create(
+        wishlist=wishlist,
+        product=product
+    )
+
+    return Response({
+        "message": "Product added to wishlist",
+        "wishlist": WishlistSerializer(wishlist).data
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def remove_from_wishlist(request):
+    item_id = request.data.get("item_id")
+
+    WishlistItem.objects.filter(id=item_id).delete()
+
+    return Response({
+        "message": "Product removed from wishlist"
+    })
+

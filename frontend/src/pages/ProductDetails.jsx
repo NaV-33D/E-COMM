@@ -56,7 +56,7 @@ function ProductDetails() {
                
                 <div className="bg--50 flex items-center justify-center p-8">
                     <img
-                        src={`${product.image}`}
+                        src={`${BASEURL}${product.image}`}
                         alt={product.name}
                         className="w-full max-w-md h-[450px] object-contain hover:scale-105 transition-transform duration-300"
                     />

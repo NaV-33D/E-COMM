@@ -7,6 +7,7 @@ export const CartProvider = ({ children }) => {
     const BASEURL = import.meta.env.VITE_BASE_URL;
     const [cartItems, setCartItems] = useState([]);
     const [total, setTotal] = useState(0);
+    const [wishlistItems, setWishlistItems] = useState([]);
 
     //Fetch Cart form BE
     const fetchCart = async () => {
@@ -21,9 +22,60 @@ export const CartProvider = ({ children }) => {
         }
     }
 
+    const fetchWishlist = async () => {
+    try {
+        const res = await authFetch(`${BASEURL}api/wishlist/`);
+        const data = await res.json();
+
+        setWishlistItems(data.items || []);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
     useEffect(() => {
         fetchCart();
+        fetchWishlist();
+
     }, []);
+
+    const addToWishlist = async (productId) => {
+    try {
+        await authFetch(`${BASEURL}api/wishlist/add/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                product_id: productId,
+            }),
+        });
+
+        fetchWishlist();
+
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const removeFromWishlist = async (itemId) => {
+    try {
+        await authFetch(`${BASEURL}api/wishlist/remove/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                item_id: itemId,
+            }),
+        });
+
+        fetchWishlist();
+
+    } catch (error) {
+        console.error(error);
+    }
+};
 
     //Add Product to Cart
     const addToCart = async (productId) => {
@@ -84,7 +136,7 @@ export const CartProvider = ({ children }) => {
 
     return (
         <CartContext.Provider
-        value={{ cartItems,total, addToCart, removeFromCart, updateQuantity, clearCart }}>
+value={{ cartItems, total, wishlistItems, addToWishlist, removeFromWishlist, addToCart, removeFromCart, updateQuantity, clearCart, }}>
             {children}
         </CartContext.Provider>
     );
