@@ -16,6 +16,9 @@ import Users from "./admin/pages/Users";
 import Orders from "./admin/pages/Orders";
 import AdminPrivateRouter from "./components/AdminPrivateRouter";
 import Wishlist from './pages/Wishlist';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import { Toaster } from "react-hot-toast";
 
 const StoreLayout = () => {
   return (
@@ -28,7 +31,10 @@ const StoreLayout = () => {
 
 const App = () => {
   return (
+    
     <Router>
+        <Toaster position="top-center" />
+
       <Routes>
         {/* Public & Protected Storefront Routes (They get the Store Navbar) */}
         <Route element={<StoreLayout />}>
@@ -36,6 +42,8 @@ const App = () => {
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path='/wishlist' element={<Wishlist />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
           
           <Route element={<PrivateRouter />}>
             <Route path="/checkout" element={<CheckoutPage />} />

@@ -15,7 +15,7 @@ const AdminNavbar = () => {
         onClick={() => navigate('/')}
         className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
       >
-        Logout
+        Website
       </button>
     </header>
   )

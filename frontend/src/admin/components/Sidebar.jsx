@@ -3,8 +3,8 @@ import { NavLink } from 'react-router-dom'
 
 const Sidebar = () => {
   return (
-    <aside className="w-56 bg-slate-900 text-slate-100 p-6">
-      <div className="mb-8">
+<aside className="fixed top-0 left-0 h-screen w-52 bg-slate-900 text-slate-100 p-6">
+        <div className="mb-8">
         <h2 className="text-xl font-semibold">Admin Panel</h2>
       </div>
       <nav className="space-y-2">
