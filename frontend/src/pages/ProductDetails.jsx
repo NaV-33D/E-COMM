@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 
 function ProductDetails() {
   const { id } = useParams();
-  const BASEURL = "http://127.0.0.1:8000/";
+  const BASEURL = import.meta.env.VITE_BASE_URL;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

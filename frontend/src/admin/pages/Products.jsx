@@ -84,7 +84,7 @@ const Products = () => {
       })
 
       if (response.ok) {
-        alert(selectedProduct ? 'Product updated successfully!' : 'Product created successfully!')
+        // alert(selectedProduct ? 'Product updated successfully!' : 'Product created successfully!')
         setIsProductModalOpen(false)
         fetchProducts()
       } else {

@@ -29,9 +29,11 @@ SECRET_KEY = 'django-insecure-7lon%1(p&9m$x^!neeb(t^*^48)3t5vm(5)o))o+8^m4cm1_ia
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
-
+ALLOWED_HOSTS = [
+    "192.168.193.140",
+    "127.0.0.1",
+    "localhost",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    "corsheaders",
     'rest_framework_simplejwt',
     'store'
 ]
@@ -133,9 +136,9 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # React app running on localhost:3000
+    "http://192.168.193.140:5173",
+    "http://localhost:5173",
 ]
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
