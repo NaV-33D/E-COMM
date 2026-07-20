@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, createRef } from "react";
-import { authFetch, getAccessToken } from "../utils/auth";
+import { createContext, useContext, useState, useEffect } from "react";
+import { authFetch } from "../utils/auth";
+import toast from "react-hot-toast";
 
 const CartContext = createContext();
 
@@ -80,16 +81,20 @@ const removeFromWishlist = async (itemId) => {
     //Add Product to Cart
     const addToCart = async (productId) => {
         try{
-            await authFetch(`${BASEURL}api/cart/add/`, {
+            const response = await authFetch(`${BASEURL}api/cart/add/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ product_id: productId }),
             });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Could not add item to cart");
             fetchCart();
+            toast.success("Added to cart");
         } catch (error) {
             console.error("Error adding to cart:", error);
+            toast.error(error.message);
         }
     }
 
@@ -116,16 +121,19 @@ const removeFromWishlist = async (itemId) => {
             return;
         }
         try{
-            await authFetch(`${BASEURL}api/cart/update/`, {
+            const response = await authFetch(`${BASEURL}api/cart/update/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ item_id: itemId, quantity }),
             });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Could not update quantity");
             fetchCart();
         } catch (error) {
             console.error("Error updating quantity:", error);
+            toast.error(error.message);
         }
     }
 

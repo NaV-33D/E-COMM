@@ -32,6 +32,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "192.168.193.140",
     "127.0.0.1",
+    "http://127.0.0.1:8000"
     "localhost",
 ]
 # Application definition
@@ -138,6 +139,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://192.168.193.140:5173",
     "http://localhost:5173",
+    "http://127.0.0.1:8000"
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

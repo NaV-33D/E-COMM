@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from rest_framework.permissions import IsAdminUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -15,6 +15,7 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
+    stock_quantity = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -24,6 +25,17 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     address = models.TextField(blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.user.username
@@ -89,3 +101,20 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return self.product.name
+
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('product', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.product.name} review by {self.user.username}'

@@ -12,6 +12,7 @@ function ProductModal({
     description: "",
     price: "",
     category: "",
+    stock_quantity: 0,
     image: null,
   });
 
@@ -21,9 +22,12 @@ function ProductModal({
         name: product.name,
         description: product.description,
         price: product.price,
-        category: product.category,
+        category: product.category.id,
+        stock_quantity: product.stock_quantity,
         image: null,
       });
+    } else {
+      setForm({ name: "", description: "", price: "", category: "", stock_quantity: 0, image: null });
     }
   }, [product]);
 
@@ -53,6 +57,16 @@ function ProductModal({
             name="name"
             placeholder="Product Name"
             value={form.name}
+            onChange={handleChange}
+            className="w-full border p-3 rounded-lg"
+          />
+
+          <input
+            type="number"
+            name="stock_quantity"
+            min="0"
+            placeholder="Stock Quantity"
+            value={form.stock_quantity}
             onChange={handleChange}
             className="w-full border p-3 rounded-lg"
           />

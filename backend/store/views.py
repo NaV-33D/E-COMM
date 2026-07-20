@@ -2,14 +2,15 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from django.contrib.auth.models import User
-from .serializers import RegisterSerializer, UserSerializer
+from django.db import transaction
+from .serializers import RegisterSerializer, UserSerializer, ProfileSerializer, ReviewSerializer
 from rest_framework import status
-from .models import Product, Category, Cart, CartItem, Order, OrderItem, WishlistItem, Wishlist
+from .models import Product, Category, Cart, CartItem, Order, OrderItem, WishlistItem, Wishlist, Profile, Review
 from .serializers import ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer, WishlistItemSerializer, WishlistSerializer
 
 @api_view(['GET'])
 def get_products(request):
-    products = Product.objects.all()
+    products = Product.objects.prefetch_related('reviews')
 
     search = request.GET.get("search")
     category = request.GET.get("category")
@@ -26,7 +27,7 @@ def get_products(request):
 @api_view(['GET'])
 def get_product(request, pk):
     try:
-        product = Product.objects.get(id=pk)
+        product = Product.objects.prefetch_related('reviews').get(id=pk)
         serializer = ProductSerializer(product)
         return Response(serializer.data)
     except Product.DoesNotExist:
@@ -49,10 +50,17 @@ def get_cart(request):
 @permission_classes([IsAuthenticated])
 def add_to_cart(request):
     product_id = request.data.get('product_id')
-    product = Product.objects.get(id=product_id)
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    if product.stock_quantity < 1:
+        return Response({'error': 'Product is out of stock'}, status=status.HTTP_400_BAD_REQUEST)
     cart, created = Cart.objects.get_or_create(user=request.user)
     item, created = CartItem.objects.get_or_create(cart=cart, product=product, defaults={'quantity': 1})
     if not created:
+        if item.quantity >= product.stock_quantity:
+            return Response({'error': f'Only {product.stock_quantity} available'}, status=status.HTTP_400_BAD_REQUEST)
         item.quantity += 1
         item.save()
     return Response({'message': 'Product added to cart',"cart":CartSerializer(cart).data})
@@ -67,11 +75,14 @@ def update_cart_quantity(request):
         return Response({'error': 'Item ID and quantity are required'}, status=400)
     
     try:
-        item = CartItem.objects.get(id=item_id)
+        item = CartItem.objects.get(id=item_id, cart__user=request.user)
         if int(quantity) < 1:
             item.delete()
             return Response({'error': 'Quantity must be at least 1'}, status=400)
         
+        quantity = int(quantity)
+        if quantity > item.product.stock_quantity:
+            return Response({'error': f'Only {item.product.stock_quantity} available'}, status=status.HTTP_400_BAD_REQUEST)
         item.quantity = quantity
         item.save()
         serializer = CartItemSerializer(item)
@@ -83,7 +94,7 @@ def update_cart_quantity(request):
 @permission_classes([IsAuthenticated])
 def remove_from_cart(request):
     item_id = request.data.get('item_id')
-    CartItem.objects.filter(id=item_id).delete()
+    CartItem.objects.filter(id=item_id, cart__user=request.user).delete()
     return Response({'message': 'Item removed from cart'})
 
 @api_view(['POST'])
@@ -97,42 +108,55 @@ def create_order(request):
         payment_method = data.get('payment_method','COD')
 
         #validate Phone Number
-        if not phone.isdigit() or len(phone) < 10:
+        if not phone or not phone.isdigit() or len(phone) < 10:
             return Response({'error': 'Invalid phone number'}, status=400)
-        
-        # Get user's cart
-        cart , created = Cart.objects.get_or_create(user=request.user)
-        if not cart.items.exists():
-            return Response({'error': 'Cart is empty'}, status=400)
-        
-        total = sum([item.product.price * item.quantity for item in cart.items.all()])
+        with transaction.atomic():
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            items = list(cart.items.select_related('product'))
+            if not items:
+                return Response({'error': 'Cart is empty'}, status=400)
 
-        order = Order.objects.create(user = request.user, total_amount=total)
+            locked_products = {
+                product.id: product
+                for product in Product.objects.select_for_update().filter(
+                    id__in=[item.product_id for item in items]
+                )
+            }
+            for item in items:
+                product = locked_products[item.product_id]
+                if product.stock_quantity < item.quantity:
+                    return Response(
+                        {'error': f'Only {product.stock_quantity} left for {product.name}'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
-        for item in cart.items.all():
-            OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                quantity=item.quantity,
-                price=item.product.price
-            )
-        # Clear the cart
-        cart.items.all().delete()
+            total = sum(locked_products[item.product_id].price * item.quantity for item in items)
+            order = Order.objects.create(user=request.user, total_amount=total)
+            for item in items:
+                product = locked_products[item.product_id]
+                OrderItem.objects.create(order=order, product=product, quantity=item.quantity, price=product.price)
+                product.stock_quantity -= item.quantity
+                product.save(update_fields=['stock_quantity'])
+            cart.items.all().delete()
         return Response({'message': 'Order created successfully', 'order_id': order.id})
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAuthenticated])
 def get_orders(request):
-    orders = Order.objects.all()
+    orders = Order.objects.all() if request.user.is_staff else Order.objects.filter(user=request.user)
 
     data = [
         {
             "id": order.id,
             "user": order.user.username,
             "total_amount": order.total_amount,
-            "created_at": order.created_at,
+                "created_at": order.created_at,
+                "items": [
+                    {"product": item.product.name, "quantity": item.quantity, "price": item.price}
+                    for item in order.items.select_related('product')
+                ],
         }
         for order in orders
     ]
@@ -294,6 +318,45 @@ def current_user(request):
     })
 
 
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def profile_view(request):
+    profile, created = Profile.objects.get_or_create(user=request.user)
+    if request.method == 'GET':
+        return Response(ProfileSerializer(profile, context={'request': request}).data)
+
+    serializer = ProfileSerializer(
+        profile, data=request.data, partial=True, context={'request': request}
+    )
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def product_reviews(request, product_id):
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        reviews = product.reviews.select_related('user')
+        return Response(ReviewSerializer(reviews, many=True).data)
+
+    if not request.user.is_authenticated:
+        return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+    serializer = ReviewSerializer(data=request.data)
+    if serializer.is_valid():
+        if Review.objects.filter(product=product, user=request.user).exists():
+            return Response({'error': 'You have already reviewed this product'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(product=product, user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def dashboard_stats(request):
@@ -347,4 +410,3 @@ def remove_from_wishlist(request):
     return Response({
         "message": "Product removed from wishlist"
     })
-

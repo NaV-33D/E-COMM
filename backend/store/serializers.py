@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Category, Cart, CartItem, Wishlist, WishlistItem
+from .models import Product, Category, Cart, CartItem, Wishlist, WishlistItem, Profile, Review
 from django.contrib.auth.models import User
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -9,10 +9,20 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        source='category', queryset=Category.objects.all(), write_only=True
+    )
+    average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = '__all__'
+
+    def get_average_rating(self, obj):
+        reviews = obj.reviews.all()
+        if not reviews:
+            return None
+        return round(sum(review.rating for review in reviews) / len(reviews), 1)
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
@@ -40,6 +50,33 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', ]
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', required=False)
+    email = serializers.EmailField(source='user.email', required=False)
+
+    class Meta:
+        model = Profile
+        fields = ['username', 'email', 'phone', 'address', 'avatar', 'created_at']
+        read_only_fields = ['created_at']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        for field, value in user_data.items():
+            setattr(instance.user, field, value)
+        if user_data:
+            instance.user.save()
+        return super().update(instance, validated_data)
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ['id', 'product', 'user', 'username', 'rating', 'comment', 'created_at']
+        read_only_fields = ['product', 'user', 'created_at']
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

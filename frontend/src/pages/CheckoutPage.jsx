@@ -26,7 +26,11 @@ function CheckoutPage() {
 
     // light formatting for dummy card fields
     if (name === "card_number") {
-      value = value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+      value = value
+        .replace(/\D/g, "")
+        .slice(0, 16)
+        .replace(/(.{4})/g, "$1 ")
+        .trim();
     }
     if (name === "card_expiry") {
       value = value.replace(/\D/g, "").slice(0, 4);
@@ -91,10 +95,8 @@ function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#EAEDED] pt-8 pb-10 px-4">
       <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
-
         {/* Left */}
         <div className="md:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
-
           <h1 className="text-2xl font-bold mb-6 text-[#0F1111]">Checkout</h1>
 
           {/* Shipping */}
@@ -105,19 +107,23 @@ function CheckoutPage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-1 text-sm font-semibold text-gray-800">Full Name</label>
+                <label className="block mb-1 text-sm font-semibold text-gray-800">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  placeholder="Ahmed Naveed"
+                  placeholder="Your Name"
                   className="w-full border border-gray-300 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9900] focus:border-[#FF9900]"
                 />
               </div>
 
               <div>
-                <label className="block mb-1 text-sm font-semibold text-gray-800">Phone Number</label>
+                <label className="block mb-1 text-sm font-semibold text-gray-800">
+                  Phone Number
+                </label>
                 <input
                   type="text"
                   name="phone"
@@ -130,7 +136,9 @@ function CheckoutPage() {
             </div>
 
             <div className="mt-4">
-              <label className="block mb-1 text-sm font-semibold text-gray-800">Delivery Address</label>
+              <label className="block mb-1 text-sm font-semibold text-gray-800">
+                Delivery Address
+              </label>
               <textarea
                 rows="4"
                 name="address"
@@ -152,7 +160,9 @@ function CheckoutPage() {
               <label className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-[#FF9900] transition-colors">
                 <div>
                   <p className="font-medium text-[#0F1111]">Cash on Delivery</p>
-                  <p className="text-sm text-gray-500">Pay when your order arrives</p>
+                  <p className="text-sm text-gray-500">
+                    Pay when your order arrives
+                  </p>
                 </div>
                 <input
                   type="radio"
@@ -167,7 +177,9 @@ function CheckoutPage() {
               <label className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-[#FF9900] transition-colors">
                 <div>
                   <p className="font-medium text-[#0F1111]">Online Payment</p>
-                  <p className="text-sm text-gray-500">Debit Card / Credit Card</p>
+                  <p className="text-sm text-gray-500">
+                    Debit Card / Credit Card
+                  </p>
                 </div>
                 <input
                   type="radio"
@@ -183,7 +195,9 @@ function CheckoutPage() {
               {form.payment_method === "ONLINE" && (
                 <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
                   <div>
-                    <label className="block mb-1 text-sm font-semibold text-gray-800">Card Number</label>
+                    <label className="block mb-1 text-sm font-semibold text-gray-800">
+                      Card Number
+                    </label>
                     <input
                       type="text"
                       name="card_number"
@@ -195,20 +209,24 @@ function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block mb-1 text-sm font-semibold text-gray-800">Name on Card</label>
+                    <label className="block mb-1 text-sm font-semibold text-gray-800">
+                      Name on Card
+                    </label>
                     <input
                       type="text"
                       name="card_name"
                       value={form.card_name}
                       onChange={handleChange}
-                      placeholder="Ahmed Naveed"
+                      placeholder="As ON Card"
                       className="w-full border border-gray-300 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9900] focus:border-[#FF9900]"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block mb-1 text-sm font-semibold text-gray-800">Expiry (MM/YY)</label>
+                      <label className="block mb-1 text-sm font-semibold text-gray-800">
+                        Expiry (MM/YY)
+                      </label>
                       <input
                         type="text"
                         name="card_expiry"
@@ -219,7 +237,9 @@ function CheckoutPage() {
                       />
                     </div>
                     <div>
-                      <label className="block mb-1 text-sm font-semibold text-gray-800">CVV</label>
+                      <label className="block mb-1 text-sm font-semibold text-gray-800">
+                        CVV
+                      </label>
                       <input
                         type="password"
                         name="card_cvv"
@@ -231,7 +251,9 @@ function CheckoutPage() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-gray-400">This is a test payment form. No real charges are made.</p>
+                  <p className="text-xs text-gray-400">
+                    This is a test payment form. No real charges are made.
+                  </p>
                 </div>
               )}
             </div>
@@ -240,7 +262,9 @@ function CheckoutPage() {
 
         {/* Right */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 h-fit sticky top-24">
-          <h2 className="text-xl font-bold mb-5 text-[#0F1111]">Order Summary</h2>
+          <h2 className="text-xl font-bold mb-5 text-[#0F1111]">
+            Order Summary
+          </h2>
 
           <div className="space-y-3 text-sm">
             <div className="flex justify-between text-gray-700">

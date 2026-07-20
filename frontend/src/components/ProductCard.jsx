@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import StarRating from "./StarRating";
 
 function ProductCard({ product }) {
   const BASEURL = import.meta.env.VITE_BASE_URL;
@@ -65,10 +65,14 @@ const toggleWishlist = (e) => {
           alt={product.name}
           className="w-full h-56 object-cover rounded-lg mb-4"
         />
+        {product.stock_quantity === 0 && (
+          <span className="absolute left-6 top-6 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow">Out of Stock</span>
+        )}
         <h2 className="text-lg font-semibold text-gray-800 truncate">
           {product.name}
         </h2>
         <p className="text-gray-600 font-medium">${product.price}</p>
+        <StarRating value={product.average_rating} size="sm" />
       </div>
     </Link>
   );
