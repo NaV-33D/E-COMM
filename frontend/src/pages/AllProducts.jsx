@@ -117,7 +117,7 @@ function ProductList() {
   return (
     <div className="min-h-screen bg-[#EAEDED] font-sans">
       {/* Hero Carousel */}
-      <div className="relative w-full h-[320px] md:h-[460px] bg-[#232F3E] overflow-hidden">
+      {/* <div className="relative w-full h-[320px] md:h-[460px] bg-[#232F3E] overflow-hidden">
         <div className="relative w-full h-full">
           {CAROUSEL_SLIDES.map((slide, index) => (
             <div
@@ -175,7 +175,7 @@ function ProductList() {
             />
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Category strip - Amazon style horizontal chips */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
@@ -264,13 +264,35 @@ function ProductList() {
             </button>
           </div>
         )}
-        {/* {!loading && totalPages > 1 && (
+        {!loading && totalPages > 1 && (
           <div className="mt-8 flex items-center justify-center gap-2">
-            <button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} className="rounded border border-slate-300 bg-white px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Previous</button>
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => <button key={page} onClick={() => setPage(page)} className={`h-9 w-9 rounded text-sm font-semibold ${page === currentPage ? "bg-[#131921] text-white" : "border border-slate-300 bg-white text-slate-700"}`}>{page}</button>)}
-            <button disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} className="rounded border border-slate-300 bg-white px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Next</button>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setPage(currentPage - 1)}
+              className="rounded border border-slate-300 bg-white px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  onClick={() => setPage(page)}
+                  className={`h-9 w-9 rounded text-sm font-semibold ${page === currentPage ? "bg-[#131921] text-white" : "border border-slate-300 bg-white text-slate-700"}`}
+                >
+                  {page}
+                </button>
+              ),
+            )}
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setPage(currentPage + 1)}
+              className="rounded border border-slate-300 bg-white px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
-        )} */}
+        )}
       </div>
     </div>
   );

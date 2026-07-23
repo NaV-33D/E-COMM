@@ -80,6 +80,11 @@ const removeFromWishlist = async (itemId) => {
 
     //Add Product to Cart
     const addToCart = async (productId) => {
+        const existingItem = cartItems.find((item) => item.product === productId);
+        if (existingItem) {
+            await updateQuantity(existingItem.id, existingItem.quantity + 1);
+            return;
+        }
         try{
             const response = await authFetch(`${BASEURL}api/cart/add/`, {
                 method: "POST",

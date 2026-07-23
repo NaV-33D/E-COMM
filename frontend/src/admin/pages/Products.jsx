@@ -38,7 +38,7 @@ const Products = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        setProducts(data.results || []);
       } else {
         setError("Failed to fetch products");
       }

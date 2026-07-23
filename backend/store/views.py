@@ -2,7 +2,18 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.db import transaction
+from django.db.models import Case, Count, IntegerField, Q, Sum, Value, When
+from django.db.models.functions import TruncDate
+from django.conf import settings
+from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from datetime import timedelta
+from rest_framework.pagination import PageNumberPagination
 from .serializers import RegisterSerializer, UserSerializer, ProfileSerializer, ReviewSerializer
 from rest_framework import status
 from .models import Product, Category, Cart, CartItem, Order, OrderItem, WishlistItem, Wishlist, Profile, Review
@@ -16,13 +27,24 @@ def get_products(request):
     category = request.GET.get("category")
 
     if search:
-        products = products.filter(name__icontains=search)
+        products = products.filter(
+            Q(name__icontains=search) | Q(description__icontains=search)
+        ).annotate(
+            search_rank=Case(
+                When(name__icontains=search, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        ).order_by('search_rank', 'name')
 
     if category:
         products = products.filter(category_id=category)
 
-    serializer = ProductSerializer(products, many=True)
-    return Response(serializer.data)
+    paginator = PageNumberPagination()
+    paginator.page_size = settings.REST_FRAMEWORK['PAGE_SIZE']
+    page = paginator.paginate_queryset(products, request)
+    serializer = ProductSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['GET'])
 def get_product(request, pk):
@@ -172,6 +194,58 @@ def register_view(request):
         user = serializer.save()
         return Response({"message": "User created successfully", "user": UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def request_password_reset(request):
+    email = request.data.get('email', '').strip()
+    if not settings.EMAIL_HOST_PASSWORD:
+        return Response(
+            {'error': 'Email service is not configured. Please contact support.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    user = User.objects.filter(email__iexact=email, is_active=True).first()
+    if user:
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_url = f'{settings.FRONTEND_URL.rstrip("/")}/reset-password/{uid}/{token}'
+        try:
+            send_mail(
+                'Reset your AprilCart password',
+                f'Use this link to reset your password: {reset_url}',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+            )
+        except Exception:
+            return Response(
+                {'error': 'Email could not be sent. Please try again later.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+    return Response({'message': 'If an account exists for that email, reset instructions have been sent.'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def confirm_password_reset(request):
+    uid = request.data.get('uid', '')
+    token = request.data.get('token', '')
+    new_password = request.data.get('new_password', '')
+    try:
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return Response({'error': 'This reset link is invalid or has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not default_token_generator.check_token(user, token):
+        return Response({'error': 'This reset link is invalid or has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        validate_password(new_password, user)
+    except Exception as error:
+        return Response({'error': list(error.messages)}, status=status.HTTP_400_BAD_REQUEST)
+    user.set_password(new_password)
+    user.save()
+    return Response({'message': 'Your password has been reset. You can now sign in.'})
 
 
 
@@ -371,6 +445,34 @@ def dashboard_stats(request):
         'total_categories': total_categories,
         'total_users': total_users,
         'total_orders': total_orders,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_dashboard_stats(request):
+    thirty_days_ago = timezone.now() - timedelta(days=29)
+    orders = Order.objects.filter(created_at__gte=thirty_days_ago)
+    sales = orders.annotate(date=TruncDate('created_at')).values('date').annotate(
+        revenue=Sum('total_amount'),
+        orders=Count('id'),
+    ).order_by('date')
+    top_products = OrderItem.objects.values('product__name').annotate(
+        units_sold=Sum('quantity')
+    ).order_by('-units_sold')[:5]
+    total_revenue = Order.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+
+    return Response({
+        'total_revenue': total_revenue,
+        'total_orders': Order.objects.count(),
+        'total_products': Product.objects.count(),
+        'total_users': User.objects.count(),
+        'low_stock_count': Product.objects.filter(stock_quantity__lt=10).count(),
+        'sales_last_30_days': list(sales),
+        'top_products': [
+            {'name': item['product__name'], 'units_sold': item['units_sold']}
+            for item in top_products
+        ],
     })
 
 @api_view(['GET'])

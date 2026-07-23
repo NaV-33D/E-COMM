@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { saveTokens } from "../utils/auth";
 
 function Login() {
@@ -114,6 +115,7 @@ function Login() {
             )}
           </button>
         </div>
+        <div className="mt-2 text-right"><Link to="/forgot-password" className="text-xs font-semibold text-blue-600 hover:underline">Forgot password?</Link></div>
       </div>
 
       {/* Error Message Anchor */}

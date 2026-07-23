@@ -6,6 +6,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import ProductList from "./pages/ProductList";
+import AllProducts from "./pages/AllProducts";
 import ProductDetails from "./pages/ProductDetails";
 import Navbar from "./components/Navbar";
 import CartPage from "./pages/CartPage";
@@ -24,6 +25,8 @@ import Wishlist from "./pages/Wishlist";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import Profile from "./pages/Profile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import { Toaster } from "react-hot-toast";
 
 const StoreLayout = () => {
@@ -44,6 +47,7 @@ const App = () => {
         {/* Public & Protected Storefront Routes (They get the Store Navbar) */}
         <Route element={<StoreLayout />}>
           <Route path="/" element={<ProductList />} />
+          <Route path="/products" element={<AllProducts />} />
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/wishlist" element={<Wishlist />} />
@@ -59,6 +63,8 @@ const App = () => {
         {/* Auth Routes (No Navbar at all) */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
         <Route element={<AdminPrivateRouter />}>
           <Route path="/admin" element={<AdminLayout />}>
