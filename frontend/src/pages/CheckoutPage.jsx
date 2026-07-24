@@ -129,7 +129,7 @@ function CheckoutPage() {
                   name="phone"
                   value={form.phone}
                   onChange={handleChange}
-                  placeholder="+91 9876543210"
+                  placeholder="10 digits"
                   className="w-full border border-gray-300 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9900] focus:border-[#FF9900]"
                 />
               </div>
